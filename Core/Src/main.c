@@ -54,7 +54,8 @@ UART_HandleTypeDef huart2;
 uint16_t ADCin = 0;
 uint64_t _micro = 0;
 uint16_t dataOut = 0;
-	uint8_t DACConfig = 0b0011;
+
+uint8_t DACConfig = 0b0011;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,12 +129,12 @@ int main(void)
 			timestamp = micros();
 			dataOut++;
 			dataOut %= 4096;
-//			if (hspi3.State == HAL_SPI_STATE_READY
-//					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
-//							== GPIO_PIN_SET)
-//			{
-//				MCP4922SetOutput(DACConfig, dataOut);
-//			}
+			if (hspi3.State == HAL_SPI_STATE_READY
+					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
+							== GPIO_PIN_SET)
+			{
+				MCP4922SetOutput(DACConfig, dataOut);
+			}
 		}
     /* USER CODE END WHILE */
 
@@ -418,7 +419,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI3_SS_GPIO_Port, SPI3_SS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SHDN_GPIO_Port, SHDN_Pin, GPIO_PIN_SET);
@@ -439,12 +440,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI3_SS_Pin */
-  GPIO_InitStruct.Pin = SPI3_SS_Pin;
+  /*Configure GPIO pin : SPI_SS_Pin */
+  GPIO_InitStruct.Pin = SPI_SS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI3_SS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI_SS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SHDN_Pin */
   GPIO_InitStruct.Pin = SHDN_Pin;
@@ -467,7 +468,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	if (hspi == &hspi3)
 	{
-//		HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(SPI_SS_GPIO_Port, SPI_SS_Pin, GPIO_PIN_SET);
 	}
 }
 
