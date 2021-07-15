@@ -75,7 +75,7 @@ float L_Volt = 0.0 ;
 float H_Volt = 1.0 ;
 
 uint8_t Slope = 1;
-uint8_t duty = 30;
+int duty = 30;
 float amp = 0.0;
 float rad = 0.0;
 float offset = 0.0;
@@ -100,6 +100,11 @@ char RxDataBuffer[32] =
 { 0 };
 char fq[32] =
 { 0 };
+char Volt[64] =
+{ 0 };
+char Duty[64] =
+{ 0 };
+
 
 uint8_t state = 10;
 
@@ -127,6 +132,10 @@ void Print_Menu_Squ();
 
 void Print_fq();
 void Print_Error();
+void Print_Slope();
+void Print_Duty();
+void Print_Volt();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -214,7 +223,7 @@ int main(void)
 
 			else if (Mode == 2)
 			{
-				rad += 0.01;
+				rad = rad + 0.01;
 				amp =((H_Volt*(4096.0/3.3))-(L_Volt*(4096.0/3.3)))/2;
 				offset =((H_Volt*(4096.0/3.3))+(L_Volt*(4096.0/3.3)))/2;
 				dataOut = (amp)*sin(2*M_PI*Freq*rad)+( offset);
@@ -251,11 +260,14 @@ int main(void)
 
 
 
-
+		///////////////////////////State
 		switch (state)
 		{
 		case printMenu_Saw:
 			Mode = 1;
+			Print_fq();
+			Print_Volt();
+			Print_Slope();
 			Print_Menu_Saw();
 			state = Saw_WaitInput;
 			break;
@@ -278,13 +290,11 @@ int main(void)
 				case 's':
 					if (Freq == 10) {Freq = 10;}
 					else {Freq = Freq + 0.1 ;}
-					Print_fq();
 					state = printMenu_Saw;
 					break;
 				case 'f':
 					if (Freq == 0) {Freq = 0;}
 					else {Freq = Freq - 0.1 ;}
-					Print_fq();
 					state = printMenu_Saw;
 					break;
 
@@ -292,25 +302,31 @@ int main(void)
 				case 'x':
 					if (L_Volt == 3.3) {L_Volt = 3.3;}
 					else {L_Volt = L_Volt + 0.1 ;}
+					state = printMenu_Saw;
 					break;
 				case 'v':
 					if (L_Volt == 0) {L_Volt = 0;}
 					else {L_Volt = L_Volt - 0.1 ;}
+					state = printMenu_Saw;
 					break;
 
 				//High Volt
 				case 'w':
 					if (H_Volt == 3.3) {H_Volt = 3.3;}
 					else {H_Volt = H_Volt + 0.1 ;}
+					state = printMenu_Saw;
 					break;
 				case 'r':
 					if (H_Volt == 0) {H_Volt = 0;}
 					else {H_Volt = H_Volt - 0.1 ;}
+					state = printMenu_Saw;
 					break;
 
 				//Specific
 				case 'u':
-
+					if (Slope == 1) {Slope = 0;}
+					else {Slope = 1;}
+					state = printMenu_Saw;
 					break;
 
 				//Error
@@ -323,6 +339,8 @@ int main(void)
 
 		case printMenu_Sin:
 			Mode = 2;
+			Print_fq();
+			Print_Volt();
 			Print_Menu_Sin();
 			state = Sin_WaitInput;
 			break;
@@ -345,13 +363,11 @@ int main(void)
 				case 's':
 					if (Freq == 10) {Freq = 10;}
 					else {Freq = Freq + 0.1 ;}
-					Print_fq();
 					state = printMenu_Sin;
 					break;
 				case 'f':
 					if (Freq == 0) {Freq = 0;}
 					else {Freq = Freq - 0.1 ;}
-					Print_fq();
 					state = printMenu_Sin;
 					break;
 
@@ -359,20 +375,24 @@ int main(void)
 				case 'x':
 					if (L_Volt == 3.3) {L_Volt = 3.3;}
 					else {L_Volt = L_Volt + 0.1 ;}
+					state = printMenu_Sin;
 					break;
 				case 'v':
 					if (L_Volt == 0) {L_Volt = 0;}
 					else {L_Volt = L_Volt - 0.1 ;}
+					state = printMenu_Sin;
 					break;
 
 				//High Volt
 				case 'w':
 					if (H_Volt == 3.3) {H_Volt = 3.3;}
 					else {H_Volt = H_Volt + 0.1 ;}
+					state = printMenu_Sin;
 					break;
 				case 'r':
 					if (H_Volt == 0) {H_Volt = 0;}
 					else {H_Volt = H_Volt - 0.1 ;}
+					state = printMenu_Sin;
 					break;
 
 				//Specific
@@ -389,6 +409,9 @@ int main(void)
 
 		case printMenu_Squ:
 			Mode = 3;
+			Print_fq();
+			Print_Volt();
+			Print_Duty();
 			Print_Menu_Squ();
 			state = Squ_WaitInput;
 			break;
@@ -411,13 +434,11 @@ int main(void)
 				case 's':
 					if (Freq == 10) {Freq = 10;}
 					else {Freq = Freq + 0.1 ;}
-					Print_fq();
 					state = printMenu_Squ;
 					break;
 				case 'f':
 					if (Freq == 0) {Freq = 0;}
 					else {Freq = Freq - 0.1 ;}
-					Print_fq();
 					state = printMenu_Squ;
 					break;
 
@@ -425,30 +446,36 @@ int main(void)
 				case 'x':
 					if (L_Volt == 3.3) {L_Volt = 3.3;}
 					else {L_Volt = L_Volt + 0.1 ;}
+					state = printMenu_Squ;
 					break;
 				case 'v':
 					if (L_Volt == 0) {L_Volt = 0;}
 					else {L_Volt = L_Volt - 0.1 ;}
+					state = printMenu_Squ;
 					break;
 
 				//High Volt
 				case 'w':
 					if (H_Volt == 3.3) {H_Volt = 3.3;}
 					else {H_Volt = H_Volt + 0.1 ;}
+					state = printMenu_Squ;
 					break;
 				case 'r':
 					if (H_Volt == 0) {H_Volt = 0;}
 					else {H_Volt = H_Volt - 0.1 ;}
+					state = printMenu_Squ;
 					break;
 
 				//Specific
 				case 'j':
 					if (duty == 100) {duty = 100;}
 					else {duty = duty + 10 ;}
+					state = printMenu_Squ;
 					break;
 				case 'l':
 					if (duty == 0) {duty = 0;}
 					else {duty = duty - 10 ;}
+					state = printMenu_Squ;
 					break;
 
 				//Error
@@ -832,7 +859,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void Print_Menu_Saw()
 {
-	  char Menu[]="Sawtooth Wave Menu\r\n\r\n"
+	  char Menu[]="\r\n  ---Sawtooth Wave Menu---  \r\n\r\n"
 
 			  "Mode\r\n"
 			  "__press [i] for go to Sine Wave Menu\r\n"
@@ -859,7 +886,7 @@ void Print_Menu_Saw()
 
 void Print_Menu_Sin()
 {
-	  char Menu[]="Sine Wave Menu\r\n\r\n"
+	  char Menu[]="\r\n  ---Sine Wave Menu---  \r\n\r\n"
 
 			  "Mode\r\n"
 			  "__press [i] for go to Sine Wave Menu\r\n"
@@ -883,7 +910,7 @@ void Print_Menu_Sin()
 
 void Print_Menu_Squ()
 {
-	  char Menu[]="Square Wave Menu\r\n\r\n"
+	  char Menu[]="\r\n  ---Square Wave Menu---  \r\n\r\n"
 
 			  "Mode\r\n"
 			  "__press [i] for go to Sine Wave Menu\r\n"
@@ -915,7 +942,7 @@ void Print_fq()
 //	  Half_Period = Period/2.0 ;
 
       //char fq[]= ("frequency of LED is: %d \r\n", Freq);
-	  sprintf(fq, "frequency of LED is: %d \r\n", Freq);
+	  sprintf(fq, "frequency of LED is: %.1f \r\n", Freq);
 	  HAL_UART_Transmit(&huart2, (uint8_t*)fq, strlen(fq),100);
 
 }
@@ -924,6 +951,34 @@ void Print_Error()
 {
 	  char Eror[]="Error : Out of choice\r\n";
 	  HAL_UART_Transmit(&huart2, (uint8_t*)Eror, strlen(Eror),100);
+}
+
+void Print_Slope()
+{
+	if (Slope == 1)
+	{
+		char D[]="Slope Up\r\n";
+		HAL_UART_Transmit(&huart2, (uint8_t*)D, strlen(D),100);
+	}
+	else
+	{
+		char D[]="Slope Down\r\n";
+		HAL_UART_Transmit(&huart2, (uint8_t*)D, strlen(D),100);
+	}
+
+}
+
+void Print_Duty()
+{
+//	  sprintf(Duty, "Duty cycle is: %d \r\n",duty);
+//	  HAL_UART_Transmit(&huart2, (uint8_t*)duty, strlen(duty),100);
+}
+
+void Print_Volt()
+{
+	  sprintf(Volt, "Low Volt is: %.1f \r\n"
+			  	  	"High Volt is: %.1f \r\n", L_Volt,H_Volt);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Volt, strlen(Volt),100);
 }
 
 
