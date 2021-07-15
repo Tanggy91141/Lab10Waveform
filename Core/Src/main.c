@@ -105,7 +105,6 @@ char Volt[64] =
 char Duty[64] =
 { 0 };
 
-
 uint8_t state = 10;
 
 
@@ -889,7 +888,7 @@ void Print_Menu_Sin()
 	  char Menu[]="\r\n  ---Sine Wave Menu---  \r\n\r\n"
 
 			  "Mode\r\n"
-			  "__press [i] for go to Sine Wave Menu\r\n"
+			  "__press [a] for go to Sawtooth Wave Menu\r\n"
 			  "__press [q] for go to Square Wave Menu\r\n\r\n"
 
 			  "Parameter_Freq (0-10Hz)\r\n"
@@ -913,8 +912,8 @@ void Print_Menu_Squ()
 	  char Menu[]="\r\n  ---Square Wave Menu---  \r\n\r\n"
 
 			  "Mode\r\n"
-			  "__press [i] for go to Sine Wave Menu\r\n"
-			  "__press [q] for go to Square Wave Menu\r\n\r\n"
+			  "__press [a] for go to Sawtooth Wave Menu\r\n"
+			  "__press [i] for go to Sine Wave Menu\r\n\r\n"
 
 			  "Parameter_Freq (0-10Hz)\r\n"
 			  "__press [s] for Freq + 0.1Hz\r\n"
@@ -970,8 +969,8 @@ void Print_Slope()
 
 void Print_Duty()
 {
-//	  sprintf(Duty, "Duty cycle is: %d \r\n",duty);
-//	  HAL_UART_Transmit(&huart2, (uint8_t*)duty, strlen(duty),100);
+	  sprintf(Duty, "Duty cycle is: %.1f% \r\n",duty);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Duty, strlen(Duty),100);
 }
 
 void Print_Volt()
