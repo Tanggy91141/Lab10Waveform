@@ -63,13 +63,10 @@ uint8_t WaveMode = 1; 		// 1 = Saw
 							// 2 = Sin
 							// 3 = Squ
 
-float Freq = 1.0 ;			// Default 1 Hz
+float Freq = 0.3 ;			// Default 0.3 Hz
 float Time = 0.0 ;
 float SumFreq = 0.0 ;
 float Period_H = 0.0 ;
-
-//float Period = 1000 ;		// Period for 1 Hz
-//float Half_Period = 500 ;  	// Half of 1 Hz
 
 float L_Volt = 0.0 ;
 float H_Volt = 1.0 ;
@@ -201,6 +198,7 @@ int main(void)
 		if (micros() - timestamp >= 1000)
 		{
 			timestamp = micros();
+			Time = Time + 0.01;
 
 			if (Mode == 1)
 			{
@@ -969,7 +967,7 @@ void Print_Slope()
 
 void Print_Duty()
 {
-	  sprintf(Duty, "Duty cycle is: %.1f% \r\n",duty);
+	  sprintf(Duty, "Duty cycle is: %d% \r\n",duty);
 	  HAL_UART_Transmit(&huart2, (uint8_t*)Duty, strlen(Duty),100);
 }
 
