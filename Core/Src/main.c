@@ -65,8 +65,6 @@ uint8_t WaveMode = 1; 		// 1 = Saw
 
 float Freq = 0.3 ;			// Default 0.3 Hz
 float Time = 0.0 ;
-float SumFreq = 0.0 ;
-float Period_H = 0.0 ;
 
 float L_Volt = 0.0 ;
 float H_Volt = 1.0 ;
@@ -202,14 +200,18 @@ int main(void)
 
 			if (Mode == 1)
 			{
-				if ((Slope == 1) && (Time <= (1/Freq)))
+				float Period = 1/Freq;
+
+				if ((Slope == 1) && (Time <= (Period)))
 				{
-					dataOut = (((H_Volt*(4096.0/3.3))-( L_Volt*(4096.0/3.3)))/(1/Freq))*Time + (L_Volt *(4096.0/3.3));
+					dataOut = (((H_Volt*(4096.0/3.3))-( L_Volt*(4096.0/3.3)))/(Period))*Time
+							+ (L_Volt *(4096.0/3.3));	//offset
 				}
 
 				else if ((Slope == 0) && (Time <= (1/Freq)))
 				{
-					dataOut = (((L_Volt*(4096.0/3.3))-( H_Volt*(4096.0/3.3)))/(1/Freq))*Time + (H_Volt *(4096.0/3.3));
+					dataOut = (((L_Volt*(4096.0/3.3))-( H_Volt*(4096.0/3.3)))/(Period))*Time
+							+ (H_Volt *(4096.0/3.3));	//offset
 				}
 
 				else
@@ -228,12 +230,15 @@ int main(void)
 
 			else if (Mode == 3)
 			{
-				Period_H = duty/(Freq*100.0);
-				if(Time <= Period_H)
+
+				float PeriodSub = duty/(Freq*100.0);
+				float Period = 1/Freq;
+
+				if(Time <= PeriodSub)
 				{
 					dataOut = H_Volt*(4096.0/3.3);
 				}
-				else if ((Time > Period_H) && (Time <= (1/Freq)))
+				else if ((Time > PeriodSub) && (Time <= (Period)))
 				{
 					dataOut = L_Volt*(4096.0/3.3);
 				}
