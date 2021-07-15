@@ -56,6 +56,42 @@ uint64_t _micro = 0;
 uint16_t dataOut = 0;
 
 uint8_t DACConfig = 0b0011;
+
+uint8_t WaveMode = 1; 		// 1 = Saw
+							// 2 = Sin
+							// 3 = Squ
+
+float Freq = 1.0 ;			// Default 1 Hz
+float Period = 1000 ;		// Period for 1 Hz
+float Half_Period = 500 ;  	// Half of 1 Hz
+
+float L_Volt = 0.0 ;
+float H_Volt = 1.0 ;
+
+int16_t inputchar = 0;
+
+int duty = 30;
+
+enum	//Menu state
+{
+	printMenu_Saw = 10,
+	Saw_WaitInput = 20,
+	printMenu_Sin = 30,
+	Sin_WaitInput = 40,
+	printMenu_Squ = 50,
+	Squ_WaitInput = 60,
+};
+
+char TxDataBuffer[32] =
+{ 0 };
+char RxDataBuffer[32] =
+{ 0 };
+char fq[32] =
+{ 0 };
+
+uint8_t state = 10;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,6 +106,15 @@ static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
 void MCP4922SetOutput(uint8_t Config, uint16_t DACOutput);
 uint64_t micros();
+
+int16_t UARTRecieveIT();
+
+void Print_Menu_Saw();
+void Print_Menu_Sin();
+void Print_Menu_Squ();
+
+void Print_fq();
+void Print_Error();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -124,18 +169,233 @@ int main(void)
 	while (1)
 	{
 		static uint64_t timestamp = 0;
-		if (micros() - timestamp >= 100) //10kHz
+		if (micros() - timestamp >= 100) //10kHz     //Hz
 		{
 			timestamp = micros();
-			dataOut++;
-			dataOut %= 4096;
-			if (hspi3.State == HAL_SPI_STATE_READY
-					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
-							== GPIO_PIN_SET)
-			{
-				MCP4922SetOutput(DACConfig, dataOut);
-			}
+//			dataOut++;
+//			dataOut %= 4096;
+//			if (hspi3.State == HAL_SPI_STATE_READY
+//					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
+//							== GPIO_PIN_SET)
+//			{
+//				MCP4922SetOutput(DACConfig, dataOut);
+//			}
 		}
+
+
+
+		HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 32);
+
+		inputchar = UARTRecieveIT();		//Focus on this character
+		if(inputchar!=-1)
+		{
+			sprintf(TxDataBuffer, "\r\nYou press:[%c]\r\n\r\n", inputchar);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+		}
+
+
+
+		switch (state)
+		{
+		case printMenu_Saw:
+			Print_Menu_Saw();
+			state = Saw_WaitInput;
+			break;
+		case Saw_WaitInput:
+			switch (inputchar)
+			{
+				//Un press
+				case -1 :
+					break;
+
+				//Mode
+				case 'i':
+					state = printMenu_Sin;
+					break;
+				case 'q':
+					state = printMenu_Squ;
+					break;
+
+				//Freq
+				case 's':
+					if (Freq == 10) {Freq = 10;}
+					else {Freq = Freq + 0.1 ;}
+					Print_fq();
+					state = printMenu_Saw;
+					break;
+				case 'f':
+					if (Freq == 0) {Freq = 0;}
+					else {Freq = Freq - 0.1 ;}
+					Print_fq();
+					state = printMenu_Saw;
+					break;
+
+				//Low Volt
+				case 'x':
+					if (L_Volt == 3.3) {L_Volt = 3.3;}
+					else {L_Volt = L_Volt + 0.1 ;}
+					break;
+				case 'v':
+					if (L_Volt == 0) {L_Volt = 0;}
+					else {L_Volt = L_Volt - 0.1 ;}
+					break;
+
+				//High Volt
+				case 'w':
+					if (H_Volt == 3.3) {H_Volt = 3.3;}
+					else {H_Volt = H_Volt + 0.1 ;}
+					break;
+				case 'r':
+					if (H_Volt == 0) {H_Volt = 0;}
+					else {H_Volt = H_Volt - 0.1 ;}
+					break;
+
+				//Specific
+				case 'u':
+					break;
+
+				//Error
+				default:
+					Print_Error();
+					state = printMenu_Saw;
+					break;
+			}
+			break;
+
+		case printMenu_Sin:
+			Print_Menu_Sin();
+			state = Sin_WaitInput;
+			break;
+		case Sin_WaitInput:
+			switch (inputchar)
+			{
+				//Un press
+				case -1 :
+					break;
+
+				//Mode
+				case 'a':
+					state = printMenu_Saw;
+					break;
+				case 'q':
+					state = printMenu_Squ;
+					break;
+
+				//Freq
+				case 's':
+					if (Freq == 10) {Freq = 10;}
+					else {Freq = Freq + 0.1 ;}
+					Print_fq();
+					state = printMenu_Sin;
+					break;
+				case 'f':
+					if (Freq == 0) {Freq = 0;}
+					else {Freq = Freq - 0.1 ;}
+					Print_fq();
+					state = printMenu_Sin;
+					break;
+
+				//Low Volt
+				case 'x':
+					if (L_Volt == 3.3) {L_Volt = 3.3;}
+					else {L_Volt = L_Volt + 0.1 ;}
+					break;
+				case 'v':
+					if (L_Volt == 0) {L_Volt = 0;}
+					else {L_Volt = L_Volt - 0.1 ;}
+					break;
+
+				//High Volt
+				case 'w':
+					if (H_Volt == 3.3) {H_Volt = 3.3;}
+					else {H_Volt = H_Volt + 0.1 ;}
+					break;
+				case 'r':
+					if (H_Volt == 0) {H_Volt = 0;}
+					else {H_Volt = H_Volt - 0.1 ;}
+					break;
+
+				//Specific
+				//case '':
+					//break;
+
+				//Error
+				default:
+					Print_Error();
+					state = printMenu_Sin;
+					break;
+			}
+			break;
+
+		case printMenu_Squ:
+			Print_Menu_Squ();
+			state = Squ_WaitInput;
+			break;
+		case Squ_WaitInput:
+			switch (inputchar)
+			{
+				//Un press
+				case -1 :
+					break;
+
+				//Mode
+				case 'a':
+					state = printMenu_Saw;
+					break;
+				case 'i':
+					state = printMenu_Sin;
+					break;
+
+				//Freq
+				case 's':
+					if (Freq == 10) {Freq = 10;}
+					else {Freq = Freq + 0.1 ;}
+					Print_fq();
+					state = printMenu_Squ;
+					break;
+				case 'f':
+					if (Freq == 0) {Freq = 0;}
+					else {Freq = Freq - 0.1 ;}
+					Print_fq();
+					state = printMenu_Squ;
+					break;
+
+				//Low Volt
+				case 'x':
+					if (L_Volt == 3.3) {L_Volt = 3.3;}
+					else {L_Volt = L_Volt + 0.1 ;}
+					break;
+				case 'v':
+					if (L_Volt == 0) {L_Volt = 0;}
+					else {L_Volt = L_Volt - 0.1 ;}
+					break;
+
+				//High Volt
+				case 'w':
+					if (H_Volt == 3.3) {H_Volt = 3.3;}
+					else {H_Volt = H_Volt + 0.1 ;}
+					break;
+				case 'r':
+					if (H_Volt == 0) {H_Volt = 0;}
+					else {H_Volt = H_Volt - 0.1 ;}
+					break;
+
+				//Specific
+				case 'j':
+					break;
+				case 'l':
+					break;
+
+				//Error
+				default:
+					Print_Error();
+					state = printMenu_Squ;
+					break;
+			}
+			break;
+		}
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -256,7 +516,7 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
@@ -484,6 +744,124 @@ inline uint64_t micros()
 {
 	return htim11.Instance->CNT + _micro;
 }
+
+int16_t UARTRecieveIT()
+{
+	static uint32_t dataPos =0;
+	int16_t data = -1 ;
+	if(huart2.RxXferSize - huart2.RxXferCount!=dataPos)
+	{
+		data=RxDataBuffer[dataPos];
+		dataPos= (dataPos+1)%huart2.RxXferSize;
+	}
+	return data;
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	//sprintf(TxDataBuffer, "Received:[%s]\r\n", RxDataBuffer);
+	HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+}
+
+//////////////////////////////////////////Print
+
+void Print_Menu_Saw()
+{
+	  char Menu[]="Sawtooth Wave Menu\r\n\r\n"
+
+			  "Mode\r\n"
+			  "__press [i] for go to Sine Wave Menu\r\n"
+			  "__press [q] for go to Square Wave Menu\r\n\r\n"
+
+			  "Parameter_Freq (0-10Hz)\r\n"
+			  "__press [s] for Freq + 0.1Hz\r\n"
+			  "__press [f] for Freq - 0.1Hz\r\n\r\n"
+
+			  "Parameter_Low Volt (0-3.3V)\r\n"
+			  "__press [x] for Low Volt + 0.1V\r\n"
+			  "__press [v] for Low Volt - 0.1V\r\n\r\n"
+
+			  "Parameter_High Volt (0-3.3V)\r\n"
+			  "__press [w] for High Volt + 0.1V\r\n"
+			  "__press [r] for High Volt - 0.1V\r\n\r\n"
+
+			  "Parameter_specific\r\n"
+			  "__press [u] for slopeUp/slopeDown\r\n"
+
+			  "\r\n-----------------------------\r\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu),100);
+}
+
+void Print_Menu_Sin()
+{
+	  char Menu[]="Sine Wave Menu\r\n\r\n"
+
+			  "Mode\r\n"
+			  "__press [i] for go to Sine Wave Menu\r\n"
+			  "__press [q] for go to Square Wave Menu\r\n\r\n"
+
+			  "Parameter_Freq (0-10Hz)\r\n"
+			  "__press [s] for Freq + 0.1Hz\r\n"
+			  "__press [f] for Freq - 0.1Hz\r\n\r\n"
+
+			  "Parameter_Low Volt (0-3.3V)\r\n"
+			  "__press [x] for Low Volt + 0.1V\r\n"
+			  "__press [v] for Low Volt - 0.1V\r\n\r\n"
+
+			  "Parameter_High Volt (0-3.3V)\r\n"
+			  "__press [w] for High Volt + 0.1V\r\n"
+			  "__press [r] for High Volt - 0.1V\r\n"
+
+			  "\r\n-----------------------------\r\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu),100);
+}
+
+void Print_Menu_Squ()
+{
+	  char Menu[]="Square Wave Menu\r\n\r\n"
+
+			  "Mode\r\n"
+			  "__press [i] for go to Sine Wave Menu\r\n"
+			  "__press [q] for go to Square Wave Menu\r\n\r\n"
+
+			  "Parameter_Freq (0-10Hz)\r\n"
+			  "__press [s] for Freq + 0.1Hz\r\n"
+			  "__press [f] for Freq - 0.1Hz\r\n\r\n"
+
+			  "Parameter_Low Volt (0-3.3V)\r\n"
+			  "__press [x] for Low Volt + 0.1V\r\n"
+			  "__press [v] for Low Volt - 0.1V\r\n\r\n"
+
+			  "Parameter_High Volt (0-3.3V)\r\n"
+			  "__press [w] for High Volt + 0.1V\r\n"
+			  "__press [r] for High Volt - 0.1V\r\n\r\n"
+
+			  "Parameter_specific (0-100%)\r\n"
+			  "__press [j] for duty cycle + 10%\r\n"
+			  "__press [l] for duty cycle - 10%\r\n"
+
+			  "\r\n-----------------------------\r\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu),100);
+}
+
+void Print_fq()
+{
+	  Period = (1.0/Freq)*1000.0 ;		//millisecond
+	  Half_Period = Period/2.0 ;
+
+      //char fq[]= ("frequency of LED is: %d \r\n", Freq);
+	  sprintf(fq, "frequency of LED is: %d \r\n", Freq);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)fq, strlen(fq),100);
+
+}
+
+void Print_Error()
+{
+	  char Eror[]="Error : Out of choice\r\n";
+	  HAL_UART_Transmit(&huart2, (uint8_t*)Eror, strlen(Eror),100);
+}
+
+
 /* USER CODE END 4 */
 
 /**
