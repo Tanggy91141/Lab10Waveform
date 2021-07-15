@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,15 +64,25 @@ uint8_t WaveMode = 1; 		// 1 = Saw
 							// 3 = Squ
 
 float Freq = 1.0 ;			// Default 1 Hz
-float Period = 1000 ;		// Period for 1 Hz
-float Half_Period = 500 ;  	// Half of 1 Hz
+float Time = 0.0 ;
+float SumFreq = 0.0 ;
+float Period_H = 0.0 ;
+
+//float Period = 1000 ;		// Period for 1 Hz
+//float Half_Period = 500 ;  	// Half of 1 Hz
 
 float L_Volt = 0.0 ;
 float H_Volt = 1.0 ;
 
-int16_t inputchar = 0;
+uint8_t Slope = 1;
+uint8_t duty = 30;
+float amp = 0.0;
+float rad = 0.0;
+float offset = 0.0;
 
-int duty = 30;
+uint8_t Mode = 1;
+
+int16_t inputchar = 0;
 
 enum	//Menu state
 {
@@ -168,22 +180,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		static uint64_t timestamp = 0;
-		if (micros() - timestamp >= 100) //10kHz     //Hz
-		{
-			timestamp = micros();
-//			dataOut++;
-//			dataOut %= 4096;
-//			if (hspi3.State == HAL_SPI_STATE_READY
-//					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
-//							== GPIO_PIN_SET)
-//			{
-//				MCP4922SetOutput(DACConfig, dataOut);
-//			}
-		}
-
-
-
 		HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 32);
 
 		inputchar = UARTRecieveIT();		//Focus on this character
@@ -193,11 +189,73 @@ int main(void)
 			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
 		}
 
+		static uint64_t timestamp = 0;
+		if (micros() - timestamp >= 1000)
+		{
+			timestamp = micros();
+
+			if (Mode == 1)
+			{
+				if ((Slope == 1) && (Time <= (1/Freq)))
+				{
+					dataOut = (((H_Volt*(4096.0/3.3))-( L_Volt*(4096.0/3.3)))/(1/Freq))*Time + (L_Volt *(4096.0/3.3));
+				}
+
+				else if ((Slope == 0) && (Time <= (1/Freq)))
+				{
+					dataOut = (((L_Volt*(4096.0/3.3))-( H_Volt*(4096.0/3.3)))/(1/Freq))*Time + (H_Volt *(4096.0/3.3));
+				}
+
+				else
+				{
+					Time = 0.0;
+				}
+			}
+
+			else if (Mode == 2)
+			{
+				rad += 0.01;
+				amp =((H_Volt*(4096.0/3.3))-(L_Volt*(4096.0/3.3)))/2;
+				offset =((H_Volt*(4096.0/3.3))+(L_Volt*(4096.0/3.3)))/2;
+				dataOut = (amp)*sin(2*M_PI*Freq*rad)+( offset);
+			}
+
+			else if (Mode == 3)
+			{
+				Period_H = duty/(Freq*100.0);
+				if(Time <= Period_H)
+				{
+					dataOut = H_Volt*(4096.0/3.3);
+				}
+				else if ((Time > Period_H) && (Time <= (1/Freq)))
+				{
+					dataOut = L_Volt*(4096.0/3.3);
+				}
+				else
+				{
+					Time = 0.0;
+				}
+			}
+
+
+			if (hspi3.State == HAL_SPI_STATE_READY
+					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
+							== GPIO_PIN_SET)
+			{
+				MCP4922SetOutput(DACConfig, dataOut);
+			}
+		}
+
+
+
+
+
 
 
 		switch (state)
 		{
 		case printMenu_Saw:
+			Mode = 1;
 			Print_Menu_Saw();
 			state = Saw_WaitInput;
 			break;
@@ -252,6 +310,7 @@ int main(void)
 
 				//Specific
 				case 'u':
+
 					break;
 
 				//Error
@@ -263,6 +322,7 @@ int main(void)
 			break;
 
 		case printMenu_Sin:
+			Mode = 2;
 			Print_Menu_Sin();
 			state = Sin_WaitInput;
 			break;
@@ -328,6 +388,7 @@ int main(void)
 			break;
 
 		case printMenu_Squ:
+			Mode = 3;
 			Print_Menu_Squ();
 			state = Squ_WaitInput;
 			break;
@@ -382,8 +443,12 @@ int main(void)
 
 				//Specific
 				case 'j':
+					if (duty == 100) {duty = 100;}
+					else {duty = duty + 10 ;}
 					break;
 				case 'l':
+					if (duty == 0) {duty = 0;}
+					else {duty = duty - 10 ;}
 					break;
 
 				//Error
@@ -846,8 +911,8 @@ void Print_Menu_Squ()
 
 void Print_fq()
 {
-	  Period = (1.0/Freq)*1000.0 ;		//millisecond
-	  Half_Period = Period/2.0 ;
+//	  Period = (1.0/Freq)*1000.0 ;		//millisecond
+//	  Half_Period = Period/2.0 ;
 
       //char fq[]= ("frequency of LED is: %d \r\n", Freq);
 	  sprintf(fq, "frequency of LED is: %d \r\n", Freq);
