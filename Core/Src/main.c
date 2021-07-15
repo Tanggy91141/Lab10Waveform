@@ -124,7 +124,7 @@ int main(void)
 	while (1)
 	{
 		static uint64_t timestamp = 0;
-		if (micros() - timestamp > 100)
+		if (micros() - timestamp >= 100) //10kHz
 		{
 			timestamp = micros();
 			dataOut++;

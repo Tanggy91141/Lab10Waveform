@@ -418,7 +418,7 @@ int main(void)
 	while (1)
 	{
 		static uint64_t timestamp = 0;
-		if (micros() - timestamp > 100)
+		if (micros() - timestamp >= 100) //10kHz
  8000524:	f000 fad4 	bl	8000ad0 <micros>
  8000528:	460a      	mov	r2, r1
  800052a:	4601      	mov	r1, r0
@@ -430,7 +430,7 @@ int main(void)
  800053a:	eb64 040c 	sbc.w	r4, r4, ip
  800053e:	2c00      	cmp	r4, #0
  8000540:	bf08      	it	eq
- 8000542:	2b65      	cmpeq	r3, #101	; 0x65
+ 8000542:	2b64      	cmpeq	r3, #100	; 0x64
  8000544:	d3ee      	bcc.n	8000524 <main+0x4c>
 		{
 			timestamp = micros();
