@@ -59,10 +59,6 @@ uint16_t dataOut = 0;
 
 uint8_t DACConfig = 0b0011;
 
-uint8_t WaveMode = 1; 		// 1 = Saw
-							// 2 = Sin
-							// 3 = Squ
-
 float Freq = 0.3 ;			// Default 0.3 Hz
 float Time = 0.0 ;
 
@@ -75,7 +71,9 @@ float amp = 0.0;
 float rad = 0.0;
 float offset = 0.0;
 
-uint8_t Mode = 1;
+uint8_t Mode = 1;			// 1 = Saw
+							// 2 = Sin
+							// 3 = Squ
 
 int16_t inputchar = 0;
 
